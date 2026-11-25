@@ -1,0 +1,17 @@
+{
+  "name": "Hechos en Casa",
+  "short_name": "Hechos en Casa",
+  "description": "Pedidos, cuentas de cobro y gastos de Hechos en Casa",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ACCBC5",
+  "theme_color": "#ACCBC5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ACCBC5">
+<title>Hechos en Casa</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #ACCBC5; color: #000; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #E7E7F4; visibility: hidden; }
+  #app.lista { visibility: visible; }
+  #portada { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    padding: 24px max(24px, env(safe-area-inset-left)); text-align: center; background: #ACCBC5; transition: opacity .3s; }
+  #portada.fuera { opacity: 0; pointer-events: none; }
+  #portada img { width: min(240px, 62vw); height: auto; border-radius: 50%; }
+  #msg { margin: 0; font-weight: 600; max-width: 420px; }
+  form { display: grid; gap: 12px; width: min(440px, 100%); }
+  form[hidden] { display: none; }
+  label { font-weight: 700; text-align: left; }
+  input { width: 100%; box-sizing: border-box; min-height: 52px; border: 1.5px solid #6f8f88; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
+  button { min-height: 52px; border: 0; border-radius: 14px; background: #000; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; }
+  button.claro { background: transparent; color: #000; border: 1.5px solid #000; }
+  .error { color: #8a1c14; font-weight: 600; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { #portada { transition: none; } }
+</style>
+</head>
+<body>
+<div id="portada">
+  <img src="icon-512.png" alt="Hechos en Casa">
+  <p id="msg">Cargando…</p>
+  <form id="config" hidden>
+    <label for="enlace">Enlace de la app</label>
+    <input id="enlace" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+    <p class="error" id="error" hidden></p>
+    <button type="submit">Guardar y abrir</button>
+  </form>
+  <button class="claro" id="reintentar" hidden>Volver a intentar</button>
+</div>
+<iframe id="app" title="Hechos en Casa" allow="camera; clipboard-write; fullscreen"></iframe>
+<script>
+{
+  const CLAVE = 'hec_enlace_app';
+  const $ = id => document.getElementById(id);
+  const leer = () => { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } };
+  const guardar = v => { try { localStorage.setItem(CLAVE, v); } catch (e) {} };
+  const valido = v => /^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\/[\w-]+\/exec\/?$/.test(v);
+  let espera;
+
+  function pedirEnlace(texto) {
+    $('msg').textContent = texto || 'Pega el enlace de la app. Es el que termina en /exec y solo se pide la primera vez.';
+    $('config').hidden = false; $('reintentar').hidden = true;
+    $('enlace').value = leer();
+  }
+
+  function abrir(url) {
+    $('config').hidden = true; $('reintentar').hidden = true;
+    $('msg').textContent = 'Cargando…';
+    const app = $('app');
+    app.onload = () => { clearTimeout(espera); app.classList.add('lista'); $('portada').classList.add('fuera'); };
+    app.src = url;
+    clearTimeout(espera);
+    espera = setTimeout(() => {
+      $('msg').textContent = 'Está tardando más de lo normal. Revisa la conexión a internet.';
+      $('reintentar').hidden = false;
+    }, 20000);
+  }
+
+  $('config').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = $('enlace').value.trim();
+    if (!valido(v)) { $('error').textContent = 'Ese enlace no parece el de la app. Debe empezar por https://script.google.com y terminar en /exec.'; $('error').hidden = false; return; }
+    $('error').hidden = true; guardar(v); abrir(v);
+  });
+  $('reintentar').addEventListener('click', () => { const u = leer(); u ? abrir(u) : pedirEnlace(); });
+
+  const params = new URLSearchParams(location.search);
+  const url = leer();
+  if (params.has('cambiar') || !url) pedirEnlace(); else abrir(url);
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
